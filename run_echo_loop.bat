@@ -1,4 +1,3 @@
 @echo off
-cd /d %~dp0
+echo Starting EchoMind AI Loop...
 python echo_loop.py
-pause
