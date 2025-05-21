@@ -1,4 +1,4 @@
 @echo off
-echo Running EchoLoop AI System...
+cd /d %~dp0
 python echo_loop.py
 pause
