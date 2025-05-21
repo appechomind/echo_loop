@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EchoMind - A collection of magical experiences and mind-reading tricks" />
+  <title>EchoMind - A Piece of Magic</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    html, body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    canvas#fractalCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -2;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .title {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3em;
+      color: white;
+      text-shadow: 0 0 20px #b076ff;
+      z-index: 1;
+    }
+
+    .subtitle {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5em;
+      color: #a96eff;
+      text-shadow: 0 0 10px #b076ff;
+      z-index: 1;
+    }
+
+    .orb-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 600px;
+      height: 600px;
+      margin: -300px 0 0 -300px;
+      z-index: 2;
+      /* Make container static - no animation or movement */
+      transform: none;
+    }
+    
+    .orb {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-align: center;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 0 5px black;
+      border: 2px solid #a96eff;
+      box-shadow: 0 0 25px #a96eff80;
+      z-index: 3;
+      transition: transform 0.3s;
+      backdrop-filter: blur(3px);
+      /* Fixed positions - no animation */
+      transform: translate(-50%, -50%);
+    }
+
+    .orb:hover {
+      transform: translate(-50%, -50%) scale(1.1) !important;
+    }
+    
+    .orb canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .orb span {
+      z-index: 2;
+      padding: 10px;
+    }
+    
+    /* Permission status indicator */
+    #permissionStatus {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(0,0,0,0.6);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 0.8em;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #permissionStatus.granted {
+      background-color: rgba(0,128,0,0.6);
+    }
+    
+    #permissionStatus.denied {
+      background-color: rgba(255,0,0,0.6);
+    }
+    
+    @media (max-width: 600px) {
+      .orb-container {
+        width: 300px;
+        height: 300px;
+        margin: -150px 0 0 -150px;
+      }
+      
+      .orb {
+        width: 80px;
+        height: 80px;
+        font-size: 0.8em;
+      }
+
+      .title {
+        font-size: 2em;
+      }
+
+      .subtitle {
+        font-size: 1em;
+      }
+    }
+  </style>
+  <!-- Scripts -->
+  <script type="module">
+    import { permissions } from './js/permissions-handler.js';
+    window.permissions = permissions;
+    permissions.init({ debugMode: true });
+  </script>
+  <script src="js/echomind-speech.js" defer></script>
+  <script src="js/echomind-commands.js" defer></script>
+</head>
+<body>
+  <canvas id="fractalCanvas" aria-hidden="true"></canvas>
+  
+  <main>
+    <h1 class="title" id="mainTitle">EchoMind</h1>
+    <p class="subtitle" id="mainSubtitle">A Piece of Magic</p>
+    
+    <nav class="orb-container" role="navigation" aria-label="Main navigation">
+      <a href="tricks/mentalism/mind-reader.html" class="orb" data-position="top-center" style="top: 0%; left: 50%;" aria-label="Go to Mentalism">
+        <canvas aria-hidden="true"></canvas>
+        <span>Mentalism</span>
+      </a>
+      
+      <a href="tricks/dual-device.html" class="orb" data-position="top-right" style="top: 20%; left: 85%;" aria-label="Go to Dual-Device Tricks">
+        <canvas aria-hidden="true"></canvas>
+        <span>Dual-Device<br>Tricks</span>
+      </a>
+      
+      <button class="orb" data-position="right" style="top: 50%; left: 100%;" aria-label="Phone Effects - Coming Soon" disabled>
+        <canvas aria-hidden="true"></canvas>
+        <span>Phone Effects</span>
+      </button>
+      
+      <button class="orb" data-position="bottom-right" style="top: 80%; left: 85%;" aria-label="Puzzles - Coming Soon" disabled>
+        <canvas aria-hidden="true"></canvas>
+        <span>Puzzles</span>
+      </button>
+      
+      <button class="orb" data-position="bottom-center" style="top: 100%; left: 50%;" aria-label="Community - Coming Soon" disabled>
+        <canvas aria-hidden="true"></canvas>
+        <span>Community</span>
+      </button>
+      
+      <a href="tricks/index.html" class="orb" data-position="bottom-left" style="top: 80%; left: 15%;" aria-label="Go to Tricks">
+        <canvas aria-hidden="true"></canvas>
+        <span>Tricks</span>
+      </a>
+      
+      <button class="orb" data-position="left" style="top: 50%; left: 0%;" aria-label="Settings - Coming Soon" disabled>
+        <canvas aria-hidden="true"></canvas>
+        <span>Settings</span>
+      </button>
+      
+      <a href="mind reader offical/index.html" class="orb" data-position="top-left" style="top: 20%; left: 15%;" aria-label="Go to Mind Reader">
+        <canvas aria-hidden="true"></canvas>
+        <span>Mind Reader</span>
+      </a>
+    </nav>
+  </main>
+
+  <div id="permissionStatus" role="status" aria-live="polite">Checking microphone access...</div>
+
+  <script>
+    const canvas = document.getElementById('fractalCanvas');
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let isVisible = true;
+    
+    function resizeCanvas() {
+      const scale = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * scale;
+      canvas.height = window.innerHeight * scale;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.scale(scale, scale);
+    }
+    
+    window.addEventListener('resize', throttle(resizeCanvas, 100));
+    document.addEventListener('visibilitychange', () => {
+      isVisible = document.visibilityState === 'visible';
+      if (isVisible) {
+        animate();
+      } else {
+        cancelAnimationFrame(animationFrameId);
+      }
+    });
+
+    function throttle(func, limit) {
+      let inThrottle;
+      return function(...args) {
+        if (!inThrottle) {
+          func.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => inThrottle = false, limit);
+        }
+      }
+    }
+
+    let lastTime = 0;
+    const fps = 30;
+    const frameInterval = 1000 / fps;
+    let time = 0;
+
+    function animate(currentTime = 0) {
+      if (!isVisible) return;
+      
+      const deltaTime = currentTime - lastTime;
+      if (deltaTime < frameInterval) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+      
+      lastTime = currentTime - (deltaTime % frameInterval);
+      time += 0.01;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) * 0.4;
+      
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2 + time;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${(i * 30 + time * 50) % 360}, 70%, 60%)`;
+        ctx.fill();
+        
+        if (i > 0) {
+          const prevAngle = ((i - 1) / 12) * Math.PI * 2 + time;
+          const prevX = centerX + Math.cos(prevAngle) * radius;
+          const prevY = centerY + Math.sin(prevAngle) * radius;
+          
+          ctx.beginPath();
+          ctx.moveTo(prevX, prevY);
+          ctx.lineTo(x, y);
+          ctx.strokeStyle = `hsla(${(i * 30 + time * 50) % 360}, 70%, 60%, 0.5)`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+      
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    resizeCanvas();
+    animate();
+
+    const orbCanvases = document.querySelectorAll('.orb canvas');
+    const permissionStatusElement = document.getElementById('permissionStatus');
+    let width, height;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      orbCanvases.forEach(c => {
+        c.width = c.offsetWidth;
+        c.height = c.offsetHeight;
+      });
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function drawFractal(context, w, h, t) {
+      const imageData = context.createImageData(w, h);
+      const data = imageData.data;
+      const maxIter = 60;
+
+      for (let x = 0; x < w; x++) {
+        for (let y = 0; y < h; y++) {
+          const i = (x + y * w) * 4;
+          const dx = x - w / 2;
+          const dy = y - h / 2;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx) + Math.sin(t * 0.01 + dist * 0.05);
+          const r = Math.floor(80 + 64 * Math.sin(angle * 6));
+          const g = Math.floor(40 + 64 * Math.cos(angle * 5));
+          const b = Math.floor(120 + 64 * Math.sin(angle * 4));
+          data[i] = r;
+          data[i + 1] = g;
+          data[i + 2] = b;
+          data[i + 3] = 255;
+        }
+      }
+
+      context.putImageData(imageData, 0, 0);
+    }
+
+    function drawAll() {
+      drawFractal(ctx, width, height, time);
+      orbCanvases.forEach(c => {
+        const octx = c.getContext('2d');
+        drawFractal(octx, c.width, c.height, time);
+      });
+      time += 1;
+      requestAnimationFrame(drawAll);
+    }
+
+    drawAll();
+
+    // Initialize permissions on main menu load
+    window.addEventListener('DOMContentLoaded', function() {
+      // Initialize and request permissions
+      if (window.permissionsHandler) {
+        console.log("Initializing permission handler on main menu");
+        
+        // Update status display based on current permission state
+        function updatePermissionStatus(state) {
+          permissionStatusElement.textContent = "Microphone: " + (state === 'granted' ? 'Allowed' : state === 'denied' ? 'Blocked' : 'Not set');
+          permissionStatusElement.className = state;
+          
+          // Hide status after 5 seconds if permission is granted
+          if (state === 'granted') {
+            setTimeout(() => {
+              permissionStatusElement.style.opacity = '0.5';
+            }, 3000);
+            
+            setTimeout(() => {
+              permissionStatusElement.style.display = 'none';
+            }, 5000);
+          }
+        }
+        
+        // Listen for permission changes
+        window.permissionsHandler.addListener(updatePermissionStatus);
+        
+        // Check and request permission
+        window.permissionsHandler.checkMicrophonePermission()
+          .then(state => {
+            updatePermissionStatus(state);
+            
+            // If permission not yet granted, request it
+            if (state !== 'granted') {
+              console.log("Requesting microphone permission from main menu");
+              window.permissionsHandler.requestMicrophonePermission()
+                .then(granted => {
+                  updatePermissionStatus(granted ? 'granted' : 'denied');
+                });
+            }
+          });
+      } else {
+        console.error("Permissions handler not available");
+        permissionStatusElement.textContent = "Error: Permissions system not available";
+        permissionStatusElement.className = "denied";
+      }
+    });
+
+    // Initialize orb positions
+    document.querySelectorAll('.orb').forEach(orb => {
+      orb.addEventListener('click', (e) => {
+        if (orb.hasAttribute('disabled')) {
+          e.preventDefault();
+          const feature = orb.querySelector('span').textContent;
+          alert(`${feature} is coming soon!`);
+        }
+      });
+
+      // Add keyboard navigation
+      orb.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          orb.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
