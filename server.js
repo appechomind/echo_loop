@@ -44,6 +44,12 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
 }); 
+<<<<<<< HEAD
 <!-- AI updated at 2025-05-21 18:56:08.929317 -->
 
 <!-- AI updated at 2025-05-21 18:57:24.666135 -->
+=======
+<!-- AI updated at 2025-05-21 18:56:08.920522 -->
+
+<!-- AI updated at 2025-05-21 18:57:24.658645 -->
+>>>>>>> 8e1f082 ( Add full AI communication loop system with GitHub push)

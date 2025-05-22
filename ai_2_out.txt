@@ -1,0 +1,1 @@
+ChatGPT says: Got the scan. Suggest cleaning HTML and linking index.html. Passing to LLaMA3.

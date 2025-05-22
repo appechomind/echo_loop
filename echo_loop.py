@@ -1,28 +1,40 @@
-import os
 import time
-import subprocess
-from datetime import datetime
+from cursor_agent import run_cursor_agent
+from chatgpt_agent import run_chatgpt_agent
+from llama3_agent import run_llama3_agent
+from git import Repo
 
-# Files to evolve (start with index.html, README)
-targets = ["index.html", "README.md"]
-repo_path = os.getcwd()
+CYCLE_DELAY = 30  # seconds
+GITHUB_PUSH_INTERVAL = 25
 
-def evolve_file(path):
-    with open(path, "a") as f:
-        f.write(f"\n<!-- Evolved at {datetime.now()} -->\n")
+def log(message):
+    with open("loop.log", "a", encoding="utf-8") as log_file:
+        log_file.write(f"[{time.ctime()}] {message}\n")
 
-def git_commit_push():
-    subprocess.call(["git", "add", "."])
-    subprocess.call(["git", "commit", "-m", "🤖 Auto-evolution commit"])
-    subprocess.call(["git", "push", "origin", "main"])
+def main():
+    iteration = 1
+    while True:
+        log(f"🔁 Starting iteration {iteration}")
+        run_cursor_agent()
+        time.sleep(CYCLE_DELAY)
+        run_chatgpt_agent()
+        time.sleep(CYCLE_DELAY)
+        run_llama3_agent()
+        time.sleep(CYCLE_DELAY)
+
+        if iteration % GITHUB_PUSH_INTERVAL == 0:
+            try:
+                repo = Repo(".")
+                repo.git.add(".")
+                repo.index.commit(f"🤖 Auto-commit at iteration {iteration}")
+                origin = repo.remote(name="origin")
+                origin.push()
+                log("📤 Changes pushed to GitHub.")
+            except Exception as e:
+                log(f"❌ GitHub push failed: {e}")
+
+        log(f"✅ Iteration {iteration} complete.\n")
+        iteration += 1
 
 if __name__ == "__main__":
-    while True:
-        for file in targets:
-            if os.path.exists(file):
-                evolve_file(file)
-            else:
-                with open(file, "w") as f:
-                    f.write(f"<!-- {file} created by EchoLoop -->")
-        git_commit_push()
-        time.sleep(300)
+    main()
