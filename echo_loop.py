@@ -36,5 +36,4 @@ def main():
         log(f"✅ Iteration {iteration} complete.\n")
         iteration += 1
 
-if __name__ == "__main__":
-    main()
+    print(f"[Cycle {iteration}] Complete. Repeating...")
