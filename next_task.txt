@@ -1,1 +1,1 @@
-Improve error handling and detect UI loops
+Scan files, find issues, route instructions.

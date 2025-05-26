@@ -1,8 +1,3 @@
-
 def run_llama3_agent():
-    with open("ai_2_out.txt", "r", encoding="utf-8") as inp:
-        content = inp.read()
-
-    if "js/echomind-commands.js" in content:
-        with open("llama3_response.txt", "w", encoding="utf-8") as out:
-            out.write("LLaMA3 Suggestion Received:\nAcknowledged file creation. Awaiting next task.\n")
+    with open("ai_3_out.txt", "w", encoding="utf-8") as f:
+        f.write("🧠 LLaMA3 Suggestion: Add js/echomind-commands.js placeholder.")

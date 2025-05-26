@@ -1,3 +1,1 @@
-echo Starting EchoMind AI Loop...
-python echo_loop.py
-pause
+python echomind_flask_server.py
