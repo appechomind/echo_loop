@@ -1,0 +1,1 @@
+print("[AGENT] Placeholder script. Replace with real logic.")

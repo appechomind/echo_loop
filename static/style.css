@@ -1,0 +1,4 @@
+body { font-family: Arial; background: #111; color: #eee; padding: 20px; }
+textarea { width: 100%; font-size: 1rem; }
+button { padding: 10px; background: green; color: white; border: none; }
+pre { background: #222; padding: 10px; }

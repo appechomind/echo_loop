@@ -1,0 +1,1 @@
+Scan the entire repo, check for missing files, broken code, syntax errors. Write a report and pass it to ChatGPT.

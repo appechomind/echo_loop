@@ -1,1 +1,1 @@
-Initial task: Build expanded UI and run recursive loop. do not change fundamental aspects of the operations. 
+Improve error handling and detect UI loops
