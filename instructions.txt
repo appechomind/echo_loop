@@ -1,0 +1,7 @@
+Instructions for Cursor AI & Setup:
+1. Launch with run_loop.bat
+2. System will detect ChatGPT tab and type via simulated keystrokes.
+3. Screen responses are read via OCR.
+4. Cursor receives OCR'd output and responds.
+5. Every 25 loops: new folder is created, changes logged, and pushed to origin/main.
+6. Ctrl+Shift+X will stop the loop at any time.

@@ -1,1 +1,2 @@
-python echomind_flask_server.py
+@echo off
+python autoloop_gui.py

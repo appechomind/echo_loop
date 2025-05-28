@@ -1,2 +1,6 @@
-flask
+PyQt5
+pyautogui
+pytesseract
+opencv-python
 gitpython
+keyboard
