@@ -1,10 +1,47 @@
 <!DOCTYPE html>
-<html><head><title>EchoMind Loop</title><link rel="stylesheet" href="/static/style.css"></head>
+<html>
+<head>
+    <title>EchoMind Loop</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
 <body>
 <h1>EchoMind Control Panel</h1>
-<form method="post">
-<textarea name="command" placeholder="Enter next task or command here..." rows="4" cols="60"></textarea><br>
-<button>Send</button>
+<form id="promptForm">
+    <textarea id="promptInput" name="command" placeholder="Enter next task or command here..." rows="4" cols="60"></textarea><br>
+    <button type="submit">Send</button>
 </form>
-<pre>{{ log }}</pre>
-</body></html>
+<div id="statusArea">
+    <h2>Status / Output</h2>
+    <pre id="outputBox">{{ log }}</pre>
+</div>
+<script>
+// Submit prompt via AJAX
+const form = document.getElementById('promptForm');
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const prompt = document.getElementById('promptInput').value;
+    fetch('/api/prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        document.getElementById('promptInput').value = '';
+    });
+});
+
+// Poll for status/output every 3 seconds
+function pollStatus() {
+    fetch('/api/status')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('outputBox').textContent = data.output;
+        });
+}
+setInterval(pollStatus, 3000);
+pollStatus(); // Initial call
+</script>
+</body>
+</html>

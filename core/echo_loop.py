@@ -1,19 +1,31 @@
+#!/usr/bin/env python3
+"""
+Main automation loop for EchoLoop system
+"""
+
 import os
+import sys
 import time
 import logging
 from datetime import datetime
-from browser_controller import BrowserController
-from chatgpt_typer import type_with_retry
-from screen_reader import capture_screen
-from file_writer import write_changes
-from gemini_agent import run_gemini_agent
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.append(str(Path(__file__).parent.parent))
+
+from automation.browser_controller import BrowserController
+from automation.chatgpt_typer import type_with_retry
+from automation.screen_reader import capture_screen
+from automation.file_writer import write_changes
+from agents.gemini_agent import run_gemini_agent
 import git
-from task_queue import TaskQueue, Task
+from core.task_queue import TaskQueue, Task
 import traceback
 
 # Set up logging
+log_file = Path(__file__).parent.parent / 'logs' / 'loop.log'
 logging.basicConfig(
-    filename='loop.log',
+    filename=str(log_file),
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -44,7 +56,8 @@ def commit_and_push(repo, message="Automated commit"):
 def read_input():
     """Read input from ai_1_out.txt."""
     try:
-        with open('ai_1_out.txt', 'r', encoding='utf-8') as f:
+        input_file = Path(__file__).parent.parent / 'data' / 'ai_1_out.txt'
+        with open(input_file, 'r', encoding='utf-8') as f:
             return f.read().strip()
     except Exception as e:
         logging.error(f"Error reading input: {str(e)}\n{traceback.format_exc()}")
@@ -53,7 +66,8 @@ def read_input():
 def save_response(response):
     """Save response to ai_2_out.txt."""
     try:
-        with open('ai_2_out.txt', 'w', encoding='utf-8') as f:
+        output_file = Path(__file__).parent.parent / 'data' / 'ai_2_out.txt'
+        with open(output_file, 'w', encoding='utf-8') as f:
             f.write(response)
         return True
     except Exception as e:
@@ -69,12 +83,14 @@ def process_iteration(browser, iteration):
             raise ValueError("No input text found")
         
         # Send message to ChatGPT
-        browser.send_message(input_text)
+        success, message = browser.send_message(input_text)
+        if not success:
+            raise ValueError(f"Failed to send message: {message}")
         
         # Wait for response
-        response = browser.wait_for_response()
-        if not response:
-            raise ValueError("No response received from ChatGPT")
+        success, response = browser.wait_for_response()
+        if not success:
+            raise ValueError(f"No response received from ChatGPT: {response}")
         
         # Save response
         if not save_response(response):
@@ -114,8 +130,9 @@ def main():
     
     # Initialize browser
     browser = BrowserController()
-    if not browser.initialize():
-        logging.error("Failed to initialize browser")
+    success, message = browser.initialize()
+    if not success:
+        logging.error(f"Failed to initialize browser: {message}")
         return
     
     iteration = 0
@@ -183,4 +200,4 @@ def main():
         logging.info("Automation loop stopped")
 
 if __name__ == "__main__":
-    main()
+    main() 

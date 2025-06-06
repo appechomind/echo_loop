@@ -11,197 +11,247 @@ import os
 import webbrowser
 import pygetwindow as gw
 from PIL import ImageGrab
+import logging
+from datetime import datetime
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+                            QHBoxLayout, QPushButton, QTextEdit, QLabel, 
+                            QProgressBar, QTabWidget, QSplitter, QFileDialog)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread
+from PyQt5.QtGui import QFont, QTextCursor, QColor, QPalette
 
-class EchoLoopUI(QtWidgets.QWidget):
+# Set up logging
+logging.basicConfig(
+    filename='gui.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+class AutomationThread(QThread):
+    update_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(int)
+    status_signal = pyqtSignal(str)
+    
     def __init__(self):
         super().__init__()
-        self.init_ui()
-        self.loop_running = False
-        self.loop_paused = False
-        self.loop_thread = None
-        self.last_user_message = None
+        self.running = False
+        self.paused = False
+    
+    def run(self):
+        self.running = True
+        self.paused = False
+        iteration = 0
+        
+        while self.running:
+            if not self.paused:
+                try:
+                    # Update status
+                    self.status_signal.emit("Running")
+                    
+                    # Simulate automation steps
+                    steps = [
+                        "Reading input...",
+                        "Sending to ChatGPT...",
+                        "Processing response...",
+                        "Running Gemini agent...",
+                        "Applying changes...",
+                        "Committing to Git..."
+                    ]
+                    
+                    for i, step in enumerate(steps):
+                        if not self.running or self.paused:
+                            break
+                        
+                        self.update_signal.emit(f"Step {i+1}/{len(steps)}: {step}")
+                        self.progress_signal.emit(int((i + 1) * 100 / len(steps)))
+                        time.sleep(2)  # Simulate work
+                    
+                    iteration += 1
+                    self.update_signal.emit(f"Completed iteration {iteration}")
+                    
+                except Exception as e:
+                    self.update_signal.emit(f"Error: {str(e)}")
+                    logging.error(f"Error in automation thread: {str(e)}")
+            
+            time.sleep(0.1)
+    
+    def stop(self):
+        self.running = False
+        self.status_signal.emit("Stopped")
+    
+    def pause(self):
+        self.paused = True
+        self.status_signal.emit("Paused")
+    
+    def resume(self):
+        self.paused = False
+        self.status_signal.emit("Running")
 
-    def init_ui(self):
-        self.setWindowTitle('EchoMind AutoLoop')
-        self.resize(900, 600)
-
-        # Conversation display area
-        self.conversation_area = QtWidgets.QTextEdit(self)
-        self.conversation_area.setReadOnly(True)
-        self.conversation_area.setPlaceholderText('Conversation will appear here...')
-
-        # User input area
-        self.input_box = QtWidgets.QLineEdit(self)
-        self.input_box.setPlaceholderText('Type your idea or command here...')
-        self.send_btn = QtWidgets.QPushButton('Send')
-
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("EchoLoop Automation System")
+        self.setGeometry(100, 100, 1200, 800)
+        
+        # Create main widget and layout
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        layout = QVBoxLayout(main_widget)
+        
+        # Create tab widget
+        tabs = QTabWidget()
+        layout.addWidget(tabs)
+        
+        # Main tab
+        main_tab = QWidget()
+        main_layout = QVBoxLayout(main_tab)
+        
+        # Create splitter for resizable sections
+        splitter = QSplitter(Qt.Vertical)
+        main_layout.addWidget(splitter)
+        
+        # Top section - Controls
+        controls_widget = QWidget()
+        controls_layout = QHBoxLayout(controls_widget)
+        
         # Control buttons
-        self.start_btn = QtWidgets.QPushButton('Start')
-        self.stop_btn = QtWidgets.QPushButton('Stop')
-        self.pause_btn = QtWidgets.QPushButton('Pause')
-
-        # Layout
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.conversation_area)
-        input_layout = QtWidgets.QHBoxLayout()
-        input_layout.addWidget(self.input_box)
-        input_layout.addWidget(self.send_btn)
-        layout.addLayout(input_layout)
-        layout.addWidget(self.start_btn)
-        layout.addWidget(self.pause_btn)
-        layout.addWidget(self.stop_btn)
-        self.setLayout(layout)
-
-        # Placeholder: Connect buttons to future automation logic
-        self.start_btn.clicked.connect(self.start_loop)
-        self.stop_btn.clicked.connect(self.stop_loop)
-        self.pause_btn.clicked.connect(self.pause_loop)
-        self.send_btn.clicked.connect(self.send_user_input)
-
-    def start_loop(self):
-        if not self.loop_running:
-            self.loop_running = True
-            self.loop_paused = False
-            self.conversation_area.append('🔄 [System] Loop started.')
-            self.loop_thread = threading.Thread(target=self.automation_loop, daemon=True)
-            self.loop_thread.start()
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.start_automation)
+        controls_layout.addWidget(self.start_button)
+        
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.stop_automation)
+        self.stop_button.setEnabled(False)
+        controls_layout.addWidget(self.stop_button)
+        
+        self.pause_button = QPushButton("Pause")
+        self.pause_button.clicked.connect(self.pause_automation)
+        self.pause_button.setEnabled(False)
+        controls_layout.addWidget(self.pause_button)
+        
+        # Status label
+        self.status_label = QLabel("Status: Stopped")
+        controls_layout.addWidget(self.status_label)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        controls_layout.addWidget(self.progress_bar)
+        
+        splitter.addWidget(controls_widget)
+        
+        # Middle section - Log display
+        log_widget = QWidget()
+        log_layout = QVBoxLayout(log_widget)
+        
+        log_label = QLabel("Automation Log")
+        log_layout.addWidget(log_label)
+        
+        self.log_display = QTextEdit()
+        self.log_display.setReadOnly(True)
+        log_layout.addWidget(self.log_display)
+        
+        splitter.addWidget(log_widget)
+        
+        # Bottom section - File operations
+        file_widget = QWidget()
+        file_layout = QHBoxLayout(file_widget)
+        
+        self.input_file_button = QPushButton("Select Input File")
+        self.input_file_button.clicked.connect(self.select_input_file)
+        file_layout.addWidget(self.input_file_button)
+        
+        self.output_file_button = QPushButton("Select Output File")
+        self.output_file_button.clicked.connect(self.select_output_file)
+        file_layout.addWidget(self.output_file_button)
+        
+        splitter.addWidget(file_widget)
+        
+        # Set initial splitter sizes
+        splitter.setSizes([100, 400, 100])
+        
+        tabs.addTab(main_tab, "Main")
+        
+        # Settings tab
+        settings_tab = QWidget()
+        settings_layout = QVBoxLayout(settings_tab)
+        
+        # Add settings controls here
+        settings_label = QLabel("Settings")
+        settings_layout.addWidget(settings_label)
+        
+        tabs.addTab(settings_tab, "Settings")
+        
+        # Initialize automation thread
+        self.automation_thread = AutomationThread()
+        self.automation_thread.update_signal.connect(self.update_log)
+        self.automation_thread.progress_signal.connect(self.update_progress)
+        self.automation_thread.status_signal.connect(self.update_status)
+        
+        # Set dark theme
+        self.set_dark_theme()
+    
+    def set_dark_theme(self):
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        palette.setColor(QPalette.WindowText, Qt.white)
+        palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ToolTipBase, Qt.white)
+        palette.setColor(QPalette.ToolTipText, Qt.white)
+        palette.setColor(QPalette.Text, Qt.white)
+        palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.ButtonText, Qt.white)
+        palette.setColor(QPalette.BrightText, Qt.red)
+        palette.setColor(QPalette.Link, QColor(42, 130, 218))
+        palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+        palette.setColor(QPalette.HighlightedText, Qt.black)
+        
+        self.setPalette(palette)
+    
+    def start_automation(self):
+        self.automation_thread.start()
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.pause_button.setEnabled(True)
+        self.update_log("Starting automation...")
+    
+    def stop_automation(self):
+        self.automation_thread.stop()
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.pause_button.setEnabled(False)
+        self.update_log("Stopping automation...")
+    
+    def pause_automation(self):
+        if self.automation_thread.paused:
+            self.automation_thread.resume()
+            self.pause_button.setText("Pause")
         else:
-            self.conversation_area.append('⚠️ [System] Loop already running.')
+            self.automation_thread.pause()
+            self.pause_button.setText("Resume")
+    
+    def update_log(self, message):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.log_display.append(f"[{timestamp}] {message}")
+        self.log_display.moveCursor(QTextCursor.End)
+    
+    def update_progress(self, value):
+        self.progress_bar.setValue(value)
+    
+    def update_status(self, status):
+        self.status_label.setText(f"Status: {status}")
+    
+    def select_input_file(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Select Input File", "", "Text Files (*.txt)")
+        if file_name:
+            self.update_log(f"Selected input file: {file_name}")
+    
+    def select_output_file(self):
+        file_name, _ = QFileDialog.getSaveFileName(self, "Select Output File", "", "Text Files (*.txt)")
+        if file_name:
+            self.update_log(f"Selected output file: {file_name}")
 
-    def stop_loop(self):
-        self.loop_running = False
-        self.conversation_area.append('⏹️ [System] Loop stopped.')
-
-    def pause_loop(self):
-        self.loop_paused = not self.loop_paused
-        state = 'paused' if self.loop_paused else 'resumed'
-        self.conversation_area.append(f'⏸️ [System] Loop {state}.')
-
-    def send_user_input(self):
-        user_text = self.input_box.text().strip()
-        if user_text:
-            self.conversation_area.append(f'📝 [User]: {user_text}')
-            self.last_user_message = user_text
-            self.input_box.clear()
-
-    def automation_loop(self):
-        loop_count = 0
-        while self.loop_running:
-            if self.loop_paused:
-                time.sleep(0.5)
-                continue
-            loop_count += 1
-            # 1. Pull latest from GitHub
-            self.update_ui('🔃 [Git] Pulling latest changes...')
-            self.git_pull()
-            # 2. Launch or focus ChatGPT in Chrome
-            self.update_ui('🌐 [Browser] Ensuring ChatGPT is open...')
-            self.ensure_chatgpt_open()
-            # 3. Type message to ChatGPT
-            message = self.last_user_message or f'Hello from Cursor! (loop {loop_count})'
-            self.update_ui(f'⌨️ [Cursor] Typing to ChatGPT: {message}')
-            self.type_to_chatgpt(message)
-            # 4. Wait for response (1.5 min max)
-            self.update_ui('⏳ [System] Waiting for ChatGPT response...')
-            response = self.read_chatgpt_response(timeout=90)
-            self.update_ui(f'🤖 [ChatGPT]: {response}')
-            # 5. Cursor processes response, makes repo edits
-            self.update_ui('🧠 [Cursor] Analyzing repo and making improvements...')
-            self.cursor_process_response(response)
-            # 6. Every 25 loops: log, create folder, push
-            if loop_count % 25 == 0:
-                self.update_ui('📦 [Git] Logging and pushing changes...')
-                self.git_push(loop_count)
-            # 7. Wait or break if stopped
-            for _ in range(5):
-                if not self.loop_running:
-                    break
-                time.sleep(1)
-
-    def update_ui(self, text):
-        QtCore.QMetaObject.invokeMethod(self.conversation_area, "append", QtCore.Qt.QueuedConnection, QtCore.Q_ARG(str, text))
-
-    def ensure_chatgpt_open(self):
-        # Try to find Chrome window with ChatGPT, or launch if not found
-        try:
-            chatgpt_url = 'https://chat.openai.com/'
-            chrome_windows = [w for w in gw.getWindowsWithTitle('Chrome') if w.isVisible]
-            chatgpt_window = None
-            for w in chrome_windows:
-                if 'chat.openai.com' in w.title.lower() or 'chatgpt' in w.title.lower():
-                    chatgpt_window = w
-                    break
-            if not chatgpt_window:
-                webbrowser.open(chatgpt_url)
-                time.sleep(5)  # Wait for Chrome to open
-                chrome_windows = [w for w in gw.getWindowsWithTitle('Chrome') if w.isVisible]
-                chatgpt_window = chrome_windows[0] if chrome_windows else None
-            if chatgpt_window:
-                chatgpt_window.activate()
-                time.sleep(1)
-                self.update_ui('✅ [Browser] ChatGPT window focused.')
-            else:
-                self.update_ui('❌ [Browser] Could not find or open ChatGPT window.')
-        except Exception as e:
-            self.update_ui(f'❌ [Browser] Error: {e}')
-
-    def type_to_chatgpt(self, message):
-        try:
-            time.sleep(1)
-            pyautogui.click()  # Focus input box (assumes it's focused)
-            time.sleep(0.5)
-            pyautogui.typewrite(message, interval=0.03)
-            pyautogui.press('enter')
-            self.update_ui('✅ [Cursor] Message sent to ChatGPT.')
-        except Exception as e:
-            self.update_ui(f'❌ [Cursor] Typing error: {e}')
-
-    def read_chatgpt_response(self, timeout=90):
-        # Wait for response, then OCR the response area
-        start_time = time.time()
-        last_text = ''
-        while time.time() - start_time < timeout:
-            # Screenshot a region (user may need to adjust these coordinates)
-            x, y, w, h = 300, 200, 900, 500  # Example region
-            img = ImageGrab.grab(bbox=(x, y, x + w, y + h))
-            text = pytesseract.image_to_string(img)
-            if text.strip() and text.strip() != last_text:
-                last_text = text.strip()
-                if len(last_text) > 10:  # Heuristic: response is ready
-                    return last_text
-            time.sleep(2)
-        return last_text or '[No response detected]'
-
-    def cursor_process_response(self, response):
-        # Example: create a new file with the response
-        try:
-            filename = f'cursor_response_{int(time.time())}.txt'
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(response)
-            self.update_ui(f'📄 [Cursor] Saved response to {filename}')
-        except Exception as e:
-            self.update_ui(f'❌ [Cursor] File write error: {e}')
-
-    def git_pull(self):
-        # Use subprocess to run 'git pull'
-        try:
-            subprocess.run(['git', 'pull'], check=True)
-        except Exception as e:
-            self.update_ui(f'❌ [Git] Pull failed: {e}')
-
-    def git_push(self, loop_count):
-        # Use subprocess to add, commit, and push
-        try:
-            folder_name = f'loop_{loop_count}'
-            os.makedirs(folder_name, exist_ok=True)
-            subprocess.run(['git', 'add', '.'], check=True)
-            subprocess.run(['git', 'commit', '-m', f'Auto-update at loop {loop_count}'], check=True)
-            subprocess.run(['git', 'push'], check=True)
-        except Exception as e:
-            self.update_ui(f'❌ [Git] Push failed: {e}')
-
-if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-    win = EchoLoopUI()
-    win.show()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
     sys.exit(app.exec_())

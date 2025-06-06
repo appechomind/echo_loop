@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoLoop AI Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .chat-subtitle {
+            font-size: 16px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .message-input-section {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .input-form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #007bff;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .message-input:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40,167,69,0.4);
+        }
+        
+        .send-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-area {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .conversation-area {
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        
+        .ai-message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .ai-message.cursor {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left: 5px solid #28a745;
+        }
+        
+        .ai-message.chatgpt {
+            background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);
+            border-left: 5px solid #007bff;
+        }
+        
+        .ai-message.gemini {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 5px solid #ffc107;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .agent-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .agent-name {
+            font-weight: bold;
+            font-size: 18px;
+            color: #495057;
+            margin-right: 10px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: #6c757d;
+            margin-left: auto;
+        }
+        
+        .message-content {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: #212529;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .refresh-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 20px;
+            float: right;
+        }
+        
+        .refresh-btn:hover {
+            background: #138496;
+        }
+        
+        .examples {
+            background-color: #e9f7ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .examples h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        
+        .example-commands {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .example-cmd {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .example-cmd:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1 class="chat-title">🤖 EchoLoop AI Chat</h1>
+            <p class="chat-subtitle">Command your AI agents to build anything!</p>
+            <button class="refresh-btn" onclick="loadConversation()">🔄 Refresh</button>
+        </div>
+        
+        <div class="message-input-section">
+            <form class="input-form" onsubmit="sendMessage(event)">
+                <input type="text" id="messageInput" class="message-input" 
+                       placeholder="Type your command here (e.g., 'build a todo app')" 
+                       maxlength="500" required>
+                <button type="submit" id="sendBtn" class="send-btn">📤 Send</button>
+            </form>
+            <div id="statusArea" class="status-area"></div>
+            
+            <div class="examples">
+                <h4>💡 Try these examples:</h4>
+                <div class="example-commands">
+                    <span class="example-cmd" onclick="useExample('build a todo app')">build a todo app</span>
+                    <span class="example-cmd" onclick="useExample('create a calculator')">create a calculator</span>
+                    <span class="example-cmd" onclick="useExample('make a weather app')">make a weather app</span>
+                    <span class="example-cmd" onclick="useExample('build a contact form')">build a contact form</span>
+                    <span class="example-cmd" onclick="useExample('create a landing page')">create a landing page</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="conversationArea" class="conversation-area">
+            <div class="empty-state">
+                <div class="empty-icon">🤖</div>
+                <h3>Welcome to EchoLoop AI Chat!</h3>
+                <p>Send a command above to start collaborating with your AI agents.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadConversation() {
+            fetch('/api/conversation')
+                .then(response => response.json())
+                .then(data => {
+                    const conversationArea = document.getElementById('conversationArea');
+                    
+                    if (data.error) {
+                        conversationArea.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">❌</div>
+                                <h3>Error loading conversation</h3>
+                                <p>${data.error}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    if (!data.conversation || data.conversation.length === 0) {
+                        conversationArea.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">🤖</div>
+                                <h3>No conversation yet</h3>
+                                <p>Send a command above to start collaborating with your AI agents!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    conversationArea.innerHTML = '';
+                    data.conversation.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        let agentClass = 'cursor';
+                        if (msg.agent.includes('ChatGPT')) agentClass = 'chatgpt';
+                        if (msg.agent.includes('Gemini')) agentClass = 'gemini';
+                        
+                        messageDiv.className = `ai-message ${agentClass}`;
+                        
+                        const timestamp = new Date(msg.timestamp).toLocaleString();
+                        
+                        messageDiv.innerHTML = `
+                            <div class="message-header">
+                                <span class="agent-icon">${msg.icon}</span>
+                                <span class="agent-name">${msg.agent}</span>
+                                <span class="message-time">${timestamp}</span>
+                            </div>
+                            <div class="message-content">${msg.content}</div>
+                        `;
+                        
+                        conversationArea.appendChild(messageDiv);
+                    });
+                    
+                    conversationArea.scrollTop = conversationArea.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error loading conversation:', error);
+                    document.getElementById('conversationArea').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">❌</div>
+                            <h3>Connection Error</h3>
+                            <p>Could not load conversation: ${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const statusArea = document.getElementById('statusArea');
+            
+            const message = messageInput.value.trim();
+            if (!message) {
+                showStatus('Please enter a message', 'error');
+                return;
+            }
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = '📤 Sending...';
+            statusArea.style.display = 'none';
+            
+            fetch('/api/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatus(`Error: ${data.error}`, 'error');
+                } else {
+                    showStatus(data.message, 'success');
+                    messageInput.value = '';
+                    setTimeout(() => {
+                        loadConversation();
+                    }, 1000);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '📤 Send';
+            });
+        }
+        
+        function showStatus(message, type) {
+            const statusArea = document.getElementById('statusArea');
+            statusArea.textContent = message;
+            statusArea.className = `status-area status-${type}`;
+            statusArea.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusArea.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        function useExample(command) {
+            document.getElementById('messageInput').value = command;
+            document.getElementById('messageInput').focus();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConversation();
+        });
+
+        setInterval(() => {
+            loadConversation();
+        }, 10000);
+    </script>
+</body>
+</html> 
